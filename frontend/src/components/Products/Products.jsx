@@ -27,8 +27,18 @@ const Products = () => {
     const params = useParams();
     const location = useLocation();
 
+    // Decode URL parameter for category
+    const getInitialCategory = () => {
+        if (location.search) {
+            const urlParams = new URLSearchParams(location.search);
+            const cat = urlParams.get('category');
+            return cat || "";
+        }
+        return "";
+    };
+
     const [price, setPrice] = useState([0, 200000]);
-    const [category, setCategory] = useState(location.search ? location.search.split("=")[1] : "");
+    const [category, setCategory] = useState(getInitialCategory());
     const [ratings, setRatings] = useState(0);
 
     // pagination
@@ -45,19 +55,38 @@ const Products = () => {
         setPrice(newPrice);
     }
 
+    // Handlers for editable price inputs
+    const handleMinPriceChange = (e) => {
+        const value = parseInt(e.target.value.replace(/[^0-9]/g, '')) || 0;
+        setPrice([Math.min(value, price[1]), price[1]]);
+    }
+
+    const handleMaxPriceChange = (e) => {
+        const value = parseInt(e.target.value.replace(/[^0-9]/g, '')) || 0;
+        setPrice([price[0], Math.max(value, price[0])]);
+    }
+
     const clearFilters = () => {
         setPrice([0, 200000]);
         setCategory("");
         setRatings(0);
     }
 
+    // Update category when URL changes
+    useEffect(() => {
+        setCategory(getInitialCategory());
+    }, [location.search]);
+
     useEffect(() => {
         if (error) {
             enqueueSnackbar(error, { variant: "error" });
             dispatch(clearErrors());
         }
+    }, [dispatch, error, enqueueSnackbar]);
+
+    useEffect(() => {
         dispatch(getProducts(keyword, category, price, ratings, currentPage));
-    }, [dispatch, keyword, category, price, ratings, currentPage, error, enqueueSnackbar]);
+    }, [dispatch, keyword, category, price, ratings, currentPage]);
 
     return (
         <>
@@ -97,9 +126,19 @@ const Products = () => {
                                     />
 
                                     <div className="flex gap-3 items-center justify-between mb-2 min-w-full">
-                                        <span className="flex-1 border px-4 py-1 rounded-sm text-gray-800 bg-gray-50">₹{price[0].toLocaleString()}</span>
+                                        <input 
+                                            type="text" 
+                                            value={`₹${price[0].toLocaleString()}`}
+                                            onChange={handleMinPriceChange}
+                                            className="flex-1 border px-2 py-1 rounded-sm text-gray-800 bg-white w-20 text-center"
+                                        />
                                         <span className="font-medium text-gray-400">to</span>
-                                        <span className="flex-1 border px-4 py-1 rounded-sm text-gray-800 bg-gray-50">₹{price[1].toLocaleString()}</span>
+                                        <input 
+                                            type="text" 
+                                            value={`₹${price[1].toLocaleString()}`}
+                                            onChange={handleMaxPriceChange}
+                                            className="flex-1 border px-2 py-1 rounded-sm text-gray-800 bg-white w-20 text-center"
+                                        />
                                     </div>
                                 </div>
                                 {/* price slider filter */}

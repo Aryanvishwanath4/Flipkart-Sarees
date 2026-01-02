@@ -2,9 +2,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import FolderIcon from '@mui/icons-material/Folder';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import PersonIcon from '@mui/icons-material/Person';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import ChatIcon from '@mui/icons-material/Chat';
-import FolderSharedIcon from '@mui/icons-material/FolderShared';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
@@ -20,110 +19,93 @@ const Sidebar = ({ activeTab }) => {
 
     const handleLogout = () => {
         dispatch(logoutUser());
-        enqueueSnackbar("Logout Successfully", { variant: "success" });
+        enqueueSnackbar("Logged out successfully", { variant: "success" });
         navigate("/login");
     }
 
     return (
         <div className="hidden sm:flex flex-col gap-4 w-1/4 px-1">
 
-            {/* <!-- profile card --> */}
-            <div className="flex items-center gap-4 p-3 bg-white rounded-sm shadow">
-                {/* <!-- user icon --> */}
-                <div className="w-12 h-12 rounded-full">
-                    <img draggable="false" className="h-full w-full object-cover rounded-full" src={user.avatar.url} alt="Avatar" />
+            {/* Profile Card */}
+            <div className="flex items-center gap-4 p-4 bg-white rounded-lg shadow border-l-4 border-[#bf9847]">
+                <div className="w-14 h-14 rounded-full border-2 border-[#bf9847] overflow-hidden">
+                    <img 
+                        draggable="false" 
+                        className="h-full w-full object-cover" 
+                        src={user?.avatar?.url || "https://res.cloudinary.com/demo/image/upload/v1/avatars/default.png"} 
+                        alt="Avatar" 
+                    />
                 </div>
-                {/* <!-- user icon --> */}
-                <div className="flex flex-col gap-1">
-                    <p className="text-xs">Hello,</p>
-                    <h2 className="font-medium">{user.name}</h2>
-                </div>
-            </div>
-            {/* <!-- profile card --> */}
-
-            {/* <!-- nav tiles --> */}
-            <div className="flex flex-col bg-white rounded-sm shadow">
-
-                {/* <!-- my orders tab --> */}
-                <div className="flex items-center gap-5 px-4 py-4 border-b">
-                    <span className="text-primary-blue"><FolderIcon /></span>
-                    <Link className="flex w-full justify-between font-medium text-gray-500 hover:text-primary-blue" to="/orders">
-                        MY ORDERS
-                        <span><ChevronRightIcon /></span>
-                    </Link>
-                </div>
-                {/* <!-- my orders tab --> */}
-
-                {/* <!-- account settings tab --> */}
-                <div className="flex items-center gap-5 px-4 py-4">
-                    <span className="text-primary-blue"><PersonIcon /></span>
-                    <p className="flex w-full justify-between font-medium text-gray-500">ACCOUNT SETTINGS</p>
-                </div>
-                <div className="flex flex-col pb-3 border-b text-sm">
-                    <Link to="/account" className={`${activeTab === "profile" ? "bg-blue-50 text-primary-blue font-medium" : "hover:bg-blue-50 hover:text-primary-blue"} p-3 pl-14`}>Profile Information</Link>
-                    <Link className="p-3 pl-14 hover:bg-blue-50 hover:text-primary-blue" to="/">Manage Addresses</Link>
-                    <Link className="p-3 pl-14 hover:bg-blue-50 hover:text-primary-blue" to="/">PAN Card Information</Link>
-                </div>
-                {/* <!-- account settings tab --> */}
-
-                {/* <!-- payments tab --> */}
-                <div className="flex items-center gap-5 px-4 py-4">
-                    <span className="text-primary-blue"><AccountBalanceWalletIcon /></span>
-                    <p className="flex w-full justify-between font-medium text-gray-500">PAYMENTS</p>
-                </div>
-                <div className="flex flex-col pb-3 border-b text-sm">
-                    <Link className="p-3 pl-14 hover:bg-blue-50 hover:text-primary-blue flex justify-between pr-6" to="/">Gift Cards <span className="font-medium text-primary-green">₹0</span></Link>
-                    <Link className="p-3 pl-14 hover:bg-blue-50 hover:text-primary-blue" to="/">Saved UPI</Link>
-                    <Link className="p-3 pl-14 hover:bg-blue-50 hover:text-primary-blue" to="/">Saved Cards</Link>
-                </div>
-                {/* <!-- payments tab --> */}
-
-                {/* <!-- my chats tab --> */}
-                <div className="flex items-center gap-5 px-4 py-4 border-b">
-                    <span className="text-primary-blue"><ChatIcon /></span>
-                    <Link className="flex w-full justify-between font-medium text-gray-500 hover:text-primary-blue" to="/">
-                        MY CHATS
-                        <span><ChevronRightIcon /></span>
-                    </Link>
-                </div>
-                {/* <!-- my chats tab --> */}
-
-                {/* <!-- my stuff tab --> */}
-                <div className="flex items-center gap-5 px-4 py-4">
-                    <span className="text-primary-blue"><FolderSharedIcon /></span>
-                    <p className="flex w-full justify-between font-medium text-gray-500">MY STUFF</p>
-                </div>
-                <div className="flex flex-col pb-3 border-b text-sm">
-                    <Link className="p-3 pl-14 hover:bg-blue-50 hover:text-primary-blue" to="/">My Coupons</Link>
-                    <Link className="p-3 pl-14 hover:bg-blue-50 hover:text-primary-blue" to="/">My Reviews & Ratings</Link>
-                    <Link className="p-3 pl-14 hover:bg-blue-50 hover:text-primary-blue" to="/">All Notifications</Link>
-                    <Link to="/wishlist" className={`${activeTab === "wishlist" ? "bg-blue-50 text-primary-blue font-medium" : "hover:bg-blue-50 hover:text-primary-blue"} p-3 pl-14`}>My Wishlist</Link>
-                </div>
-                {/* <!-- my stuff tab --> */}
-
-                {/* <!-- logout tab --> */}
-                <div className="flex items-center gap-5 px-4 py-4 border-b">
-                    <span className="text-primary-blue"><PowerSettingsNewIcon /></span>
-                    <div className="flex w-full justify-between font-medium text-gray-500 hover:text-primary-blue cursor-pointer" onClick={handleLogout}>
-                        Logout
-                        <span><ChevronRightIcon /></span>
-                    </div>
-                </div>
-                {/* <!-- logout tab --> */}
-
-            </div>
-            {/* <!-- nav tiles --> */}
-
-            {/* <!-- frequenty visited tab --> */}
-            <div className="flex flex-col items-start gap-2 p-4 bg-white rounded-sm shadow">
-                <span className="text-xs font-medium">Frequently Visited:</span>
-                <div className="flex gap-2.5 text-xs text-gray-500">
-                    <Link to="/password/update">Change Password</Link>
-                    <Link to="/orders">Track Order</Link>
-                    <Link to="/">Help Center</Link>
+                <div className="flex flex-col">
+                    <p className="text-xs text-gray-500">Welcome,</p>
+                    <h2 className="font-semibold text-gray-800">{user?.name}</h2>
                 </div>
             </div>
-            {/* <!-- frequenty visited tab --> */}
+
+            {/* Navigation */}
+            <div className="flex flex-col bg-white rounded-lg shadow overflow-hidden">
+
+                {/* My Orders */}
+                <Link 
+                    to="/orders" 
+                    className={`flex items-center gap-4 px-4 py-4 border-b hover:bg-amber-50 transition-colors ${activeTab === "orders" ? "bg-amber-50 border-l-4 border-[#bf9847]" : ""}`}
+                >
+                    <span className="text-[#bf9847]"><FolderIcon /></span>
+                    <span className="flex-1 font-medium text-gray-700">My Orders</span>
+                    <ChevronRightIcon className="text-gray-400" />
+                </Link>
+
+                {/* Profile */}
+                <Link 
+                    to="/account" 
+                    className={`flex items-center gap-4 px-4 py-4 border-b hover:bg-amber-50 transition-colors ${activeTab === "profile" ? "bg-amber-50 border-l-4 border-[#bf9847]" : ""}`}
+                >
+                    <span className="text-[#bf9847]"><PersonIcon /></span>
+                    <span className="flex-1 font-medium text-gray-700">Profile</span>
+                    <ChevronRightIcon className="text-gray-400" />
+                </Link>
+
+                {/* Saved Addresses */}
+                <Link 
+                    to="/account/addresses" 
+                    className={`flex items-center gap-4 px-4 py-4 border-b hover:bg-amber-50 transition-colors ${activeTab === "addresses" ? "bg-amber-50 border-l-4 border-[#bf9847]" : ""}`}
+                >
+                    <span className="text-[#bf9847]"><LocationOnIcon /></span>
+                    <span className="flex-1 font-medium text-gray-700">Saved Addresses</span>
+                    <ChevronRightIcon className="text-gray-400" />
+                </Link>
+
+                {/* Wishlist */}
+                <Link 
+                    to="/wishlist" 
+                    className={`flex items-center gap-4 px-4 py-4 border-b hover:bg-amber-50 transition-colors ${activeTab === "wishlist" ? "bg-amber-50 border-l-4 border-[#bf9847]" : ""}`}
+                >
+                    <span className="text-[#bf9847]"><FavoriteIcon /></span>
+                    <span className="flex-1 font-medium text-gray-700">My Wishlist</span>
+                    <ChevronRightIcon className="text-gray-400" />
+                </Link>
+
+                {/* Logout */}
+                <div 
+                    onClick={handleLogout}
+                    className="flex items-center gap-4 px-4 py-4 hover:bg-red-50 transition-colors cursor-pointer"
+                >
+                    <span className="text-red-500"><PowerSettingsNewIcon /></span>
+                    <span className="flex-1 font-medium text-gray-700">Logout</span>
+                    <ChevronRightIcon className="text-gray-400" />
+                </div>
+
+            </div>
+
+            {/* Help Section */}
+            <div className="bg-white rounded-lg shadow p-4">
+                <p className="text-sm font-medium text-gray-700 mb-2">Need Help?</p>
+                <div className="flex flex-col gap-1 text-sm text-gray-500">
+                    <Link to="/password/update" className="hover:text-[#bf9847]">Change Password</Link>
+                    <Link to="/orders" className="hover:text-[#bf9847]">Track Order</Link>
+                    <a href="mailto:support@aishwaryasilks.com" className="hover:text-[#bf9847]">Contact Us</a>
+                </div>
+            </div>
         </div>
     );
 };

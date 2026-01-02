@@ -66,7 +66,28 @@ exports.getSingleOrderDetails = asyncErrorHandler(async (req, res, next) => {
 // Get Logged In User Orders
 exports.myOrders = asyncErrorHandler(async (req, res, next) => {
 
-    const orders = await Order.find({ user: req.user._id });
+    const query = {
+        $or: [
+            { user: req.user._id },
+        ]
+    };
+
+    if (req.user.phone) {
+        const cleanPhone = req.user.phone.toString().replace(/\D/g, '');
+        const tenDigit = cleanPhone.slice(-10);
+        
+        query.$or.push({ "shippingInfo.phoneNo": parseInt(tenDigit) });
+        query.$or.push({ "shippingInfo.phoneNo": parseInt("91" + tenDigit) });
+        query.$or.push({ "guestInfo.phone": tenDigit });
+        query.$or.push({ "guestInfo.phone": "91" + tenDigit });
+        query.$or.push({ "guestInfo.phone": "+91" + tenDigit });
+    }
+
+    if (req.user.email) {
+        query.$or.push({ "guestInfo.email": req.user.email });
+    }
+
+    const orders = await Order.find(query);
 
     if (!orders) {
         return next(new ErrorHandler("Order Not Found", 404));

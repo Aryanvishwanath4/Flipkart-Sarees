@@ -26,30 +26,34 @@ const OrderDetails = () => {
 
     return (
         <>
-            <MetaData title="Order Details | Flipkart" />
+            <MetaData title="Order Details | Aishwarya Silks" />
 
             <MinCategory />
             <main className="w-full mt-14 sm:mt-4">
                 {loading ? <Loader /> : (
                     <>
-                        {order && order.user && order.shippingInfo && (
-                            <div className="flex flex-col gap-4 max-w-6xl mx-auto">
+                        {order && (order.user || order.guestInfo) && order.shippingInfo && (
+                            <div className="flex flex-col gap-4 max-w-6xl mx-auto mb-10">
 
                                 <div className="flex bg-white shadow rounded-sm min-w-full">
                                     <div className="sm:w-1/2 border-r">
                                         <div className="flex flex-col gap-3 my-8 mx-10">
                                             <h3 className="font-medium text-lg">Delivery Address</h3>
-                                            <h4 className="font-medium">{order.user.name}</h4>
+                                            <h4 className="font-medium">{order.user ? order.user.name : order.guestInfo.name}</h4>
                                             <p className="text-sm">{`${order.shippingInfo.address}, ${order.shippingInfo.city}, ${order.shippingInfo.state} - ${order.shippingInfo.pincode}`}</p>
-                                            <div className="flex gap-2 text-sm">
-                                                <p className="font-medium">Email</p>
-                                                <p>{order.user.email}</p>
+                                            <div className="flex gap-2 text-sm mt-1">
+                                                <p className="font-medium">Email:</p>
+                                                <p>{order.user ? order.user.email : (order.guestInfo.email || 'N/A')}</p>
                                             </div>
                                             <div className="flex gap-2 text-sm">
-                                                <p className="font-medium">Phone Number</p>
+                                                <p className="font-medium">Phone Number:</p>
                                                 <p>{order.shippingInfo.phoneNo}</p>
                                             </div>
                                         </div>
+                                    </div>
+                                    <div className="sm:w-1/2 flex flex-col justify-center px-10">
+                                        <p className="text-sm text-gray-500">Order ID: <span className="text-black font-medium">{order._id}</span></p>
+                                        <p className="text-sm text-gray-500 mt-1">Order Date: <span className="text-black font-medium">{new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span></p>
                                     </div>
                                 </div>
 
@@ -73,7 +77,7 @@ const OrderDetails = () => {
                                             </div>
 
                                             <div className="flex flex-col w-full sm:w-1/2">
-                                                <h3 className="font-medium sm:text-center">Order Status</h3>
+                                                <h3 className="font-medium sm:text-center mb-4">Order Status</h3>
                                                 <TrackStepper
                                                     orderOn={order.createdAt}
                                                     shippedAt={order.shippedAt}

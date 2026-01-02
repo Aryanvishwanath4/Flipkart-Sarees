@@ -9,8 +9,12 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Radio from '@mui/material/Radio';
 import RadioGroup from '@mui/material/RadioGroup';
 import SearchIcon from '@mui/icons-material/Search';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import Drawer from '@mui/material/Drawer';
 import MinCategory from '../Layouts/MinCategory';
 import MetaData from '../Layouts/MetaData';
+import Sidebar from '../User/Sidebar';
 
 const orderStatus = ["Processing", "Shipped", "Delivered"];
 const dt = new Date();
@@ -25,6 +29,7 @@ const MyOrders = () => {
     const [orderTime, setOrderTime] = useState(0);
     const [search, setSearch] = useState("");
     const [filteredOrders, setFilteredOrders] = useState([]);
+    const [showFilters, setShowFilters] = useState(false);
 
     const { orders, loading, error } = useSelector((state) => state.myOrders);
 
@@ -45,9 +50,6 @@ const MyOrders = () => {
 
     useEffect(() => {
         setSearch("");
-        // console.log(status);
-        // console.log(typeof orderTime);
-        // console.log(orderTime);
 
         if (!status && +orderTime === 0) {
             setFilteredOrders(orders);
@@ -88,7 +90,7 @@ const MyOrders = () => {
     const searchOrders = (e) => {
         e.preventDefault();
         if (!search.trim()) {
-            enqueueSnackbar("Empty Input", { variant: "warning" });
+            enqueueSnackbar("Please enter a search term", { variant: "warning" });
             return;
         }
         const arr = orders.map((el) => ({
@@ -104,124 +106,182 @@ const MyOrders = () => {
         setOrderTime(0);
     }
 
+    const FiltersContent = () => (
+        <div className="bg-white p-4 h-full">
+            {/* Filters Header */}
+            <div className="flex items-center justify-between mb-4 pb-2 border-b">
+                <p className="font-semibold text-gray-800">Filters</p>
+                <button 
+                    onClick={clearFilters} 
+                    className="text-[#bf9847] text-sm font-medium hover:underline"
+                >
+                    Clear All
+                </button>
+            </div>
+
+            {/* Order Status */}
+            <div className="mb-6">
+                <p className="font-medium text-gray-700 text-sm mb-3">ORDER STATUS</p>
+                <FormControl component="fieldset">
+                    <RadioGroup
+                        onChange={(e) => setStatus(e.target.value)}
+                        value={status}
+                    >
+                        {orderStatus.map((el, i) => (
+                            <FormControlLabel 
+                                value={el} 
+                                control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#bf9847' } }} />} 
+                                key={i} 
+                                label={<span className="text-sm text-gray-600">{el}</span>} 
+                            />
+                        ))}
+                    </RadioGroup>
+                </FormControl>
+            </div>
+
+            {/* Order Time */}
+            <div>
+                <p className="font-medium text-gray-700 text-sm mb-3">ORDER TIME</p>
+                <FormControl component="fieldset">
+                    <RadioGroup
+                        onChange={(e) => setOrderTime(e.target.value)}
+                        value={orderTime}
+                    >
+                        {ordertime.map((el, i) => (
+                            <FormControlLabel 
+                                value={el} 
+                                control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#bf9847' } }} />} 
+                                key={i} 
+                                label={<span className="text-sm text-gray-600">{i === 0 ? "This Month" : el}</span>} 
+                            />
+                        ))}
+                    </RadioGroup>
+                </FormControl>
+            </div>
+            
+            {/* Apply Button (Mobile Only) */}
+            <div className="mt-8 sm:hidden">
+                <button 
+                    onClick={() => setShowFilters(false)}
+                    className="w-full bg-[#bf9847] text-white py-2 rounded-md font-medium"
+                >
+                    Apply Filters
+                </button>
+            </div>
+        </div>
+    );
+
     return (
         <>
-            <MetaData title="My Orders | Flipkart" />
+            <MetaData title="My Orders | Aishwarya Silks" />
 
             <MinCategory />
             <main className="w-full mt-16 sm:mt-0">
 
-                {/* <!-- row --> */}
-                <div className="flex gap-3.5 mt-2 sm:mt-6 sm:mx-3 m-auto mb-7">
+                <div className="flex gap-4 sm:w-11/12 sm:mt-4 m-auto mb-7 px-0 sm:px-0">
 
-                    {/* <!-- sidebar column  --> */}
-                    <div className="hidden sm:flex flex-col w-1/5 px-1">
+                    <Sidebar activeTab={"orders"} />
 
-                        {/* <!-- nav tiles --> */}
-                        <div className="flex flex-col bg-white rounded-sm shadow">
+                    {/* Orders Content */}
+                    <div className="flex-1 w-full overflow-hidden">
 
-                            {/* <!-- filters header --> */}
-                            <div className="flex items-center justify-between gap-5 px-4 py-2 border-b">
-                                <p className="text-lg font-medium">Filters</p>
-                                <span onClick={clearFilters} className="text-blue-600 font-medium text-sm uppercase cursor-pointer hover:text-blue-700">clear all</span>
-                            </div>
-
-                            {/* <!-- order status checkboxes --> */}
-                            <div className="flex flex-col py-3 text-sm">
-                                <span className="font-medium px-4">ORDER STATUS</span>
-
-                                {/* <!-- checkboxes --> */}
-                                <div className="flex flex-col gap-3 px-4 mt-1 pb-3 border-b">
-                                    <FormControl>
-                                        <RadioGroup
-                                            aria-labelledby="orderstatus-radio-buttons-group"
-                                            onChange={(e) => setStatus(e.target.value)}
-                                            name="orderstatus-radio-buttons"
-                                            value={status}
-                                        >
-                                            {orderStatus.map((el, i) => (
-                                                <FormControlLabel value={el} control={<Radio size="small" />} key={i} label={<span className="text-sm">{el}</span>} />
-                                            ))}
-                                        </RadioGroup>
-                                    </FormControl>
-                                </div>
-                                {/* <!-- checkboxes --> */}
-
-                            </div>
-                            {/* <!-- order status checkboxes --> */}
-
-                            {/* <!-- order time checkboxes --> */}
-                            <div className="flex flex-col pb-2 text-sm">
-                                <span className="font-medium px-4">ORDER TIME</span>
-
-                                {/* <!-- checkboxes --> */}
-                                <div className="flex flex-col gap-3 mt-1 px-4 pb-3">
-                                    <FormControl>
-                                        <RadioGroup
-                                            aria-labelledby="ordertime-radio-buttons-group"
-                                            onChange={(e) => setOrderTime(e.target.value)}
-                                            name="ordertime-radio-buttons"
-                                            value={orderTime}
-                                        >
-                                            {ordertime.map((el, i) => (
-                                                <FormControlLabel value={el} control={<Radio size="small" />} key={i} label={<span className="text-sm">{i === 0 ? "This Month" : el}</span>} />
-                                            ))}
-                                        </RadioGroup>
-                                    </FormControl>
-                                </div>
-                                {/* <!-- checkboxes --> */}
-
-                            </div>
-                            {/* <!-- order time checkboxes --> */}
-
+                        {/* Header */}
+                        <div className="bg-gradient-to-r from-[#1a1a2e] to-[#16213e] text-white p-4 sm:p-6 rounded-none sm:rounded-t-lg mb-0 sm:mb-4">
+                            <h1 className="text-xl sm:text-2xl font-semibold flex items-center gap-2">
+                                <LocalShippingIcon fontSize="small" /> My Orders
+                            </h1>
+                            <p className="text-gray-300 text-xs sm:text-sm mt-1">Track and manage your orders</p>
                         </div>
-                        {/* <!-- nav tiles --> */}
-
-                    </div>
-                    {/* <!-- sidebar column  --> */}
-
-                    {/* <!-- orders column --> */}
-                    <div className="flex-1">
 
                         {loading ? <Loader /> : (
-                            <div className="flex flex-col gap-3 sm:mr-4 overflow-hidden">
+                            <div className="flex flex-col sm:flex-row gap-4 p-4 sm:p-0">
 
-                                {/* <!-- searchbar --> */}
-                                <form onSubmit={searchOrders} className="flex items-center justify-between mx-1 sm:mx-0 sm:w-10/12 bg-white border rounded hover:shadow">
-                                    <input value={search} onChange={(e) => setSearch(e.target.value)} type="search" name="search" placeholder="Search your orders here" className="p-2 text-sm outline-none flex-1 rounded-l" />
-                                    <button type="submit" className="h-full text-sm px-1 sm:px-4 py-2.5 text-white bg-primary-blue hover:bg-blue-600 rounded-r flex items-center gap-1">
-                                        <SearchIcon sx={{ fontSize: "22px" }} />
-                                        Search Orders
-                                    </button>
-                                </form>
-                                {/* <!-- searchbar --> */}
-
-                                {orders && filteredOrders.length === 0 && (
-                                    <div className="flex items-center flex-col gap-2 p-8 bg-white">
-                                        <img draggable="false" src="https://rukminim1.flixcart.com/www/100/100/promos/23/08/2020/c5f14d2a-2431-4a36-b6cb-8b5b5e283d4f.png" alt="Empty Orders" />
-                                        <span className="text-lg font-medium">Sorry, no results found</span>
-                                        <p>Edit search or clear all filters</p>
+                                {/* Filters Sidebar - Desktop Only */}
+                                <div className="hidden sm:block sm:w-1/4">
+                                    <div className="bg-white rounded-lg shadow">
+                                        <FiltersContent />
                                     </div>
-                                )}
+                                </div>
 
-                                {orders && filteredOrders.map((order) => {
+                                {/* Orders List */}
+                                <div className="flex-1 flex flex-col gap-4">
 
-                                    const { _id, orderStatus, orderItems, createdAt, deliveredAt } = order;
+                                    {/* Search & Mobile Filter Button */}
+                                    <div className="flex gap-2">
+                                        <form onSubmit={searchOrders} className="flex-1 flex items-center bg-white rounded-lg shadow overflow-hidden border">
+                                            <input 
+                                                value={search} 
+                                                onChange={(e) => setSearch(e.target.value)} 
+                                                type="search" 
+                                                placeholder="Search orders..." 
+                                                className="flex-1 p-2.5 outline-none text-sm" 
+                                            />
+                                            <button 
+                                                type="submit" 
+                                                className="px-4 py-2.5 bg-[#bf9847] text-white hover:bg-[#a8843d] transition-colors flex items-center gap-1"
+                                            >
+                                                <SearchIcon fontSize="small" />
+                                            </button>
+                                        </form>
+                                        
+                                        {/* Mobile Filter Button */}
+                                        <button 
+                                            onClick={() => setShowFilters(true)}
+                                            className="sm:hidden flex items-center gap-1.5 px-3 py-2.5 bg-white border border-gray-200 rounded-lg shadow text-[#bf9847] font-medium text-sm"
+                                        >
+                                            <FilterListIcon fontSize="small" />
+                                            Filter
+                                        </button>
+                                    </div>
 
-                                    return (
-                                        orderItems.map((item, index) => (
-                                            <OrderItem {...item} key={index} orderId={_id} orderStatus={orderStatus} createdAt={createdAt} deliveredAt={deliveredAt} />
-                                        ))
-                                    )
-                                }).reverse()}
+                                    {/* Mobile Filter Drawer */}
+                                    <Drawer
+                                        anchor="bottom"
+                                        open={showFilters}
+                                        onClose={() => setShowFilters(false)}
+                                        PaperProps={{
+                                            sx: { borderTopLeftRadius: '16px', borderTopRightRadius: '16px' }
+                                        }}
+                                    >
+                                        <div className="w-full max-h-[80vh] overflow-y-auto">
+                                            <div className="w-12 h-1.5 bg-gray-300 mx-auto mt-3 rounded-full" />
+                                            <FiltersContent />
+                                        </div>
+                                    </Drawer>
+
+                                    {/* Empty State */}
+                                    {orders && filteredOrders.length === 0 && (
+                                        <div className="flex flex-col items-center justify-center p-12 bg-white rounded-lg shadow">
+                                            <LocalShippingIcon style={{ fontSize: 64 }} className="text-gray-300 mb-4" />
+                                            <span className="text-lg font-medium text-gray-700">No orders found</span>
+                                            <p className="text-gray-500 text-sm mt-1">Try adjusting your filters or search</p>
+                                        </div>
+                                    )}
+
+                                    {/* Order Items */}
+                                    <div className="flex flex-col gap-3">
+                                        {orders && filteredOrders.map((order) => {
+                                            const { _id, orderStatus, orderItems, createdAt, deliveredAt } = order;
+
+                                            return (
+                                                orderItems.map((item, index) => (
+                                                    <OrderItem 
+                                                        {...item} 
+                                                        key={`${_id}-${index}`} 
+                                                        orderId={_id} 
+                                                        orderStatus={orderStatus} 
+                                                        createdAt={createdAt} 
+                                                        deliveredAt={deliveredAt} 
+                                                    />
+                                                ))
+                                            )
+                                        }).reverse()}
+                                    </div>
+                                </div>
                             </div>
                         )}
-
                     </div>
-                    {/* <!-- orders column --> */}
                 </div>
-                {/* <!-- row --> */}
-
             </main>
         </>
     );
