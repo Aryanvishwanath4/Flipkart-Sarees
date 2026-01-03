@@ -75,13 +75,16 @@ exports.sendOTP = asyncErrorHandler(async (req, res, next) => {
             }
             */
         } else if (selectedChannel === 'email') {
-            // Email Logic
-            await sendEmail({
+            // Email Logic (Non-blocking)
+            sendEmail({
                 email: identifier,
                 subject: 'Flipkart Login OTP',
                 message: `<p>Your OTP for login is <b>${otp}</b>. Valid for 5 minutes.</p>`
+            }).then(() => {
+                console.log(`[Email] OTP sent to ${identifier}`);
+            }).catch((err) => {
+                console.error(`[Email Error] Failed to send to ${identifier}:`, err.message);
             });
-            console.log(`[Email] OTP sent to ${identifier}`);
 
         } else if (selectedChannel === 'whatsapp') {
             // WhatsApp Logic (Mock)
