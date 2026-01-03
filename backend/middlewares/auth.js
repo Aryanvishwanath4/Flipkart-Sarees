@@ -25,3 +25,17 @@ exports.authorizeRoles = (...roles) => {
         next();
     }
 }
+
+// Optional Auth Middleware
+exports.isOptionalAuthenticatedUser = asyncErrorHandler(async (req, res, next) => {
+    const { token } = req.cookies;
+    if (token) {
+        try {
+            const decodedData = jwt.verify(token, process.env.JWT_SECRET);
+            req.user = await User.findById(decodedData.id);
+        } catch (error) {
+            // Ignore error if token is invalid, just don't set req.user
+        }
+    }
+    next();
+});

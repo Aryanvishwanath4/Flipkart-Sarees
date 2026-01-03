@@ -16,7 +16,8 @@ const orderSchema = new mongoose.Schema({
         },
         country: {
             type: String,
-            required: true
+            required: true,
+            default: "India"
         },
         pincode: {
             type: Number,
@@ -52,10 +53,17 @@ const orderSchema = new mongoose.Schema({
             },
         },
     ],
+    // User is now optional (for guest orders)
     user: {
         type: mongoose.Schema.ObjectId,
         ref: "User",
-        required: true
+        required: false
+    },
+    // Guest info for orders without account
+    guestInfo: {
+        name: String,
+        phone: String,
+        email: String,
     },
     paymentInfo: {
         id: {

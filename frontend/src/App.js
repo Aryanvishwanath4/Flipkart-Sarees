@@ -116,6 +116,8 @@ function App() {
         } ></Route>
 
         <Route path="/orders/success" element={<OrderSuccess success={true} />} />
+        <Route path="/order/success" element={<OrderSuccess success={true} />} />
+        <Route path="/order_success" element={<OrderSuccess success={true} />} />
         <Route path="/orders/failed" element={<OrderSuccess success={false} />} />
         {/* order process */}
 

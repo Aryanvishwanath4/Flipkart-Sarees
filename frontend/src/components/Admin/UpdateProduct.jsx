@@ -45,6 +45,9 @@ const UpdateProduct = () => {
     const [logo, setLogo] = useState("");
     const [logoPreview, setLogoPreview] = useState("");
 
+    const [imageUrls, setImageUrls] = useState("");
+    const [logoUrl, setLogoUrl] = useState("");
+
     const handleSpecsChange = (e) => {
         setSpecsInput({ ...specsInput, [e.target.name]: e.target.value });
     }
@@ -130,6 +133,14 @@ const UpdateProduct = () => {
         formData.set("brandname", brand);
         formData.set("logo", logo);
 
+        // Add Cloudinary URLs if provided
+        if (imageUrls.trim()) {
+            formData.append("imageUrls", imageUrls);
+        }
+        if (logoUrl.trim()) {
+            formData.append("logoUrl", logoUrl);
+        }
+
         images.forEach((image) => {
             formData.append("images", image);
         });
@@ -163,7 +174,11 @@ const UpdateProduct = () => {
             setHighlights(product.highlights);
             setSpecs(product.specifications);
             setOldImages(product.images);
-            setLogoPreview(product.brand.logo.url);
+            setLogoPreview(product.brand?.logo?.url);
+            setLogoUrl(product.brand?.logo?.url || "");
+            
+            const urls = product.images?.map(img => img.url).join(', ') || "";
+            setImageUrls(urls);
         }
         if (error) {
             enqueueSnackbar(error, { variant: "error" });
@@ -355,6 +370,51 @@ const UpdateProduct = () => {
                     </div>
 
                     <h2 className="font-medium">Product Images</h2>
+
+                    <TextField
+                        label="Cloudinary Image URLs"
+                        multiline
+                        rows={3}
+                        variant="outlined"
+                        size="small"
+                        placeholder="Paste Cloudinary URLs separated by commas&#10;Example: https://.../image1.jpg, https://.../image2.png"
+                        value={imageUrls}
+                        onChange={(e) => setImageUrls(e.target.value)}
+                        fullWidth
+                        helperText="Optional: Paste direct image links (must end in .jpg, .png, etc.)"
+                    />
+                    
+                    {/* Live URL Preview */}
+                    <div className="flex flex-col gap-2 mt-1">
+                        <p className="text-xs text-gray-500">URL Preview:</p>
+                        <div className="flex gap-2 overflow-x-auto h-24 border rounded bg-gray-50 p-2">
+                             {imageUrls.split(',').map((url, i) => {
+                                const trimmedUrl = url.trim();
+                                if (!trimmedUrl) return null;
+                                return (
+                                    <img 
+                                        draggable="false" 
+                                        src={trimmedUrl} 
+                                        alt={`Url Preview ${i}`} 
+                                        key={i} 
+                                        className="h-full object-contain border bg-white"
+                                        onError={(e) => {e.target.style.display='none'}}
+                                    />
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <TextField
+                        label="Brand Logo URL (Cloudinary)"
+                        variant="outlined"
+                        size="small"
+                        placeholder="https://res.cloudinary.com/...logourl"
+                        value={logoUrl}
+                        onChange={(e) => setLogoUrl(e.target.value)}
+                        fullWidth
+                        helperText="Optional: Paste Cloudinary URL for brand logo"
+                    />
                     <div className="flex gap-2 overflow-x-auto h-32 border rounded">
                         {oldImages && oldImages.map((image, i) => (
                             <img draggable="false" src={image.url} alt="Product" key={i} className="w-full h-full object-contain" />
@@ -363,17 +423,7 @@ const UpdateProduct = () => {
                             <img draggable="false" src={image} alt="Product" key={i} className="w-full h-full object-contain" />
                         ))}
                     </div>
-                    <label className="rounded font-medium bg-gray-400 text-center cursor-pointer text-white p-2 shadow hover:shadow-lg my-2">
-                        <input
-                            type="file"
-                            name="images"
-                            accept="image/*"
-                            multiple
-                            onChange={handleProductImageChange}
-                            className="hidden"
-                        />
-                        Choose Files
-                    </label>
+
 
                     <div className="flex justify-end">
                         <input form="mainform" type="submit" className="bg-primary-orange uppercase w-1/3 p-3 text-white font-medium rounded shadow hover:shadow-lg cursor-pointer" value="Update" />

@@ -5,7 +5,7 @@ import FormControlLabel from '@mui/material/FormControlLabel'
 import Radio from '@mui/material/Radio'
 import RadioGroup from '@mui/material/RadioGroup'
 import { useSnackbar } from 'notistack';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { clearErrors, registerUser } from '../../actions/userAction';
 import BackdropLoader from '../Layouts/BackdropLoader';
@@ -16,6 +16,7 @@ const Register = () => {
 
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const location = useLocation();
     const { enqueueSnackbar } = useSnackbar();
 
     const { loading, isAuthenticated, error } = useSelector((state) => state.user);
@@ -23,12 +24,13 @@ const Register = () => {
     const [user, setUser] = useState({
         name: "",
         email: "",
+        phone: "",
         gender: "",
         password: "",
         cpassword: "",
     });
 
-    const { name, email, gender, password, cpassword } = user;
+    const { name, email, phone, gender, password, cpassword } = user;
 
     const [avatar, setAvatar] = useState();
     const [avatarPreview, setAvatarPreview] = useState("preview.png");
@@ -51,6 +53,7 @@ const Register = () => {
         const formData = new FormData();
         formData.set("name", name);
         formData.set("email", email);
+        formData.set("phone", phone);
         formData.set("gender", gender);
         formData.set("password", password);
         formData.set("avatar", avatar);
@@ -84,7 +87,17 @@ const Register = () => {
         if (isAuthenticated) {
             navigate('/')
         }
+
     }, [dispatch, error, isAuthenticated, navigate, enqueueSnackbar]);
+
+    useEffect(() => {
+        if (location.state?.phone) {
+            setUser(prev => ({ ...prev, phone: location.state.phone }));
+        }
+        if (location.state?.email) {
+            setUser(prev => ({ ...prev, email: location.state.email }));
+        }
+    }, [location.state]);
 
     return (
         <>
@@ -132,6 +145,19 @@ const Register = () => {
                                         value={email}
                                         onChange={handleDataChange}
                                         required
+                                    />
+                                    <TextField
+                                        fullWidth
+                                        id="phone"
+                                        label="Phone Number"
+                                        type="number"
+                                        name="phone"
+                                        value={phone}
+                                        onChange={handleDataChange}
+                                        required
+                                        onInput={(e) => {
+                                            e.target.value = Math.max(0, parseInt(e.target.value) ).toString().slice(0,10)
+                                        }}
                                     />
                                 </div>
                                 {/* <!-- input container column --> */}

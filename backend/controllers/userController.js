@@ -1,4 +1,5 @@
 const User = require('../models/userModel');
+const Order = require('../models/orderModel');
 const asyncErrorHandler = require('../middlewares/asyncErrorHandler');
 const sendToken = require('../utils/sendToken');
 const ErrorHandler = require('../utils/errorHandler');
@@ -258,5 +259,153 @@ exports.deleteUser = asyncErrorHandler(async (req, res, next) => {
 
     res.status(200).json({
         success: true
+    });
+});
+
+// OTP Login - Login using phone and OTP
+exports.otpLogin = asyncErrorHandler(async (req, res, next) => {
+    const { phone } = req.body;
+
+    if (!phone) {
+        return next(new ErrorHandler("Phone number is required", 400));
+    }
+
+    // Find user by phone
+    let user = await User.findOne({ phone });
+
+    if (!user) {
+        return next(new ErrorHandler("No account found with this phone number", 404));
+    }
+
+    // OTP should already be verified before this call
+    sendToken(user, 200, res);
+});
+
+// Create Account from Guest Order
+exports.createAccountFromGuest = asyncErrorHandler(async (req, res, next) => {
+    const { name, email, phone, password, address } = req.body;
+
+    if (!name || !email || !password) {
+        return next(new ErrorHandler("Name, email and password are required", 400));
+    }
+
+    // Check if user with email or phone already exists
+    const existingUser = await User.findOne({
+        $or: [{ email }, ...(phone ? [{ phone }] : [])]
+    });
+
+    if (existingUser) {
+        return next(new ErrorHandler("User with this email or phone already exists", 400));
+    }
+
+    // Create user with address if provided
+    const userData = {
+        name,
+        email,
+        phone: phone || undefined,
+        gender: "other", // Default, can be updated later
+        password,
+        avatar: {
+            public_id: "default_avatar",
+            url: "https://res.cloudinary.com/demo/image/upload/v1/avatars/default.png"
+        }
+    };
+
+    // Add address if provided
+    if (address) {
+        userData.addresses = [{
+            ...address,
+            isDefault: true
+        }];
+    }
+
+    const user = await User.create(userData);
+
+    // Link guest orders with this phone number to the new user
+    if (phone) {
+        const cleanPhone = phone.toString().replace(/\D/g, '');
+        const tenDigit = parseInt(cleanPhone.slice(-10));
+        const with91 = parseInt("91" + cleanPhone.slice(-10));
+
+        await Order.updateMany(
+            { 
+                "shippingInfo.phoneNo": { $in: [tenDigit, with91] }, 
+                user: { $exists: false } 
+            },
+            { $set: { user: user._id } }
+        );
+    }
+
+    sendToken(user, 201, res);
+});
+
+// Check if phone has an account
+exports.checkPhoneAccount = asyncErrorHandler(async (req, res, next) => {
+    const { phone } = req.params;
+
+    const user = await User.findOne({ phone });
+
+    res.status(200).json({
+        success: true,
+        hasAccount: !!user,
+        user: user ? { name: user.name, email: user.email } : null
+    });
+});
+
+// Add/Update Address
+exports.addAddress = asyncErrorHandler(async (req, res, next) => {
+    const { name, address, city, state, pincode, phone, isDefault } = req.body;
+
+    const user = await User.findById(req.user.id);
+
+    const newAddress = {
+        name,
+        address,
+        city,
+        state,
+        pincode,
+        phone,
+        isDefault: isDefault || false
+    };
+
+    // If this is set as default, unset other defaults
+    if (isDefault) {
+        user.addresses.forEach(addr => {
+            addr.isDefault = false;
+        });
+    }
+
+    user.addresses.push(newAddress);
+    await user.save();
+
+    res.status(200).json({
+        success: true,
+        addresses: user.addresses
+    });
+});
+
+// Get User Addresses
+exports.getAddresses = asyncErrorHandler(async (req, res, next) => {
+    const user = await User.findById(req.user.id);
+
+    res.status(200).json({
+        success: true,
+        addresses: user.addresses || []
+    });
+});
+
+// Delete Address
+exports.deleteAddress = asyncErrorHandler(async (req, res, next) => {
+    const user = await User.findById(req.user.id);
+
+    user.addresses = user.addresses.filter(
+        addr => addr._id.toString() !== req.params.id
+    );
+
+    await user.save();
+
+    res.status(200).json({
+        success: true,
+        addresses: user.addresses
     });
 });

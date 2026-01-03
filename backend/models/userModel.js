@@ -14,6 +14,11 @@ const userSchema = new mongoose.Schema({
         required: [true, "Please Enter Your Email"],
         unique: true,
     },
+    phone: {
+        type: String,
+        unique: true,
+        sparse: true, // Allows null/undefined for users without phone
+    },
     gender: {
         type: String,
         required: [true, "Please Enter Gender"]
@@ -36,6 +41,16 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: "user",
     },
+    // Saved addresses for quick checkout
+    addresses: [{
+        name: String,
+        address: String,
+        city: String,
+        state: String,
+        pincode: String,
+        phone: String,
+        isDefault: { type: Boolean, default: false }
+    }],
     createdAt: {
         type: Date,
         default: Date.now,

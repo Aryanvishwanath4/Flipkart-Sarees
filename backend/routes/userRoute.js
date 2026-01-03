@@ -1,5 +1,24 @@
 const express = require('express');
-const { registerUser, loginUser, logoutUser, getUserDetails, forgotPassword, resetPassword, updatePassword, updateProfile, getAllUsers, getSingleUser, updateUserRole, deleteUser } = require('../controllers/userController');
+const { 
+    registerUser, 
+    loginUser, 
+    logoutUser, 
+    getUserDetails, 
+    forgotPassword, 
+    resetPassword, 
+    updatePassword, 
+    updateProfile, 
+    getAllUsers, 
+    getSingleUser, 
+    updateUserRole, 
+    deleteUser,
+    otpLogin,
+    createAccountFromGuest,
+    checkPhoneAccount,
+    addAddress,
+    getAddresses,
+    deleteAddress
+} = require('../controllers/userController');
 const { isAuthenticatedUser, authorizeRoles } = require('../middlewares/auth');
 
 const router = express.Router();
@@ -16,6 +35,19 @@ router.route('/password/reset/:token').put(resetPassword);
 router.route('/password/update').put(isAuthenticatedUser, updatePassword);
 
 router.route('/me/update').put(isAuthenticatedUser, updateProfile);
+
+// OTP Login
+router.route('/login/otp').post(otpLogin);
+
+// Guest to Account
+router.route('/create-from-guest').post(createAccountFromGuest);
+
+// Check if phone has account
+router.route('/check-phone/:phone').get(checkPhoneAccount);
+
+// Address Management
+router.route('/me/address').get(isAuthenticatedUser, getAddresses).post(isAuthenticatedUser, addAddress);
+router.route('/me/address/:id').delete(isAuthenticatedUser, deleteAddress);
 
 router.route("/admin/users").get(isAuthenticatedUser, authorizeRoles("admin"), getAllUsers);
 
