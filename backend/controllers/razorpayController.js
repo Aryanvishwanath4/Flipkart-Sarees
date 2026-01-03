@@ -173,17 +173,17 @@ exports.createGuestOrder = asyncErrorHandler(async (req, res, next) => {
         `;
 
         console.log(`Attempting to send guest order confirmation email to: ${guestInfo.email}`);
-        try {
-            const sendEmail = require('../utils/sendEmail');
-            await sendEmail({
-                email: guestInfo.email,
-                subject: `Order Confirmed - Aishwarya Silks (#${order._id.toString().slice(-6).toUpperCase()})`,
-                message: emailMessage
-            });
+        // Non-blocking email sending
+        const sendEmail = require('../utils/sendEmail');
+        sendEmail({
+            email: guestInfo.email,
+            subject: `Order Confirmed - Aishwarya Silks (#${order._id.toString().slice(-6).toUpperCase()})`,
+            message: emailMessage
+        }).then(() => {
             console.log("Guest order confirmation email sent successfully");
-        } catch (error) {
+        }).catch((error) => {
             console.error("Guest Order Email Error:", error.message);
-        }
+        });
     }
 
     res.status(201).json({
