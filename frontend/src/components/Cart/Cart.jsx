@@ -28,10 +28,10 @@ const Cart = () => {
     return (
         <>
             <MetaData title="Shopping Cart | Flipkart" />
-            <main className="w-full mt-20">
+            <main className="w-full mt-24 sm:mt-20">
 
                 {/* <!-- row --> */}
-                <div className="flex flex-col sm:flex-row gap-3.5 w-full sm:w-11/12 mt-0 sm:mt-4 m-auto sm:mb-7">
+                <div className="flex flex-col sm:flex-row gap-3.5 w-full sm:w-11/12 mt-0 pt-0 sm:pt-4 sm:mt-4 m-auto sm:mb-7">
 
                     {/* <!-- cart column --> */}
                     <div className="flex-1">

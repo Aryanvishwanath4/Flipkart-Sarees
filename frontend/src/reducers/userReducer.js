@@ -40,6 +40,12 @@ import {
     DELETE_USER_RESET,
     DELETE_USER_FAIL,
     REMOVE_USER_DETAILS,
+    SEND_OTP_REQUEST,
+    SEND_OTP_SUCCESS,
+    SEND_OTP_FAIL,
+    VERIFY_OTP_REQUEST,
+    VERIFY_OTP_SUCCESS,
+    VERIFY_OTP_FAIL,
 } from '../constants/userConstants';
 
 export const userReducer = (state = { user: {} }, { type, payload }) => {
@@ -47,6 +53,11 @@ export const userReducer = (state = { user: {} }, { type, payload }) => {
         case LOGIN_USER_REQUEST:
         case REGISTER_USER_REQUEST:
         case LOAD_USER_REQUEST:
+        case LOGIN_USER_REQUEST:
+        case REGISTER_USER_REQUEST:
+        case LOAD_USER_REQUEST:
+        case SEND_OTP_REQUEST:
+        case VERIFY_OTP_REQUEST:
             return {
                 loading: true,
                 isAuthenticated: false,
@@ -65,6 +76,9 @@ export const userReducer = (state = { user: {} }, { type, payload }) => {
                 loading: false,
                 user: null,
                 isAuthenticated: false,
+                otpVerified: false,
+                verifiedIdentifier: null,
+                verifiedAt: null,
             };
         case LOGIN_USER_FAIL:
         case REGISTER_USER_FAIL:
@@ -73,6 +87,31 @@ export const userReducer = (state = { user: {} }, { type, payload }) => {
                 loading: false,
                 isAuthenticated: false,
                 user: null,
+                error: payload,
+            };
+        case SEND_OTP_SUCCESS:
+            return {
+                ...state,
+                loading: false,
+                otpSent: true,
+                message: payload.message,
+            };
+        case VERIFY_OTP_SUCCESS:
+             return {
+                ...state,
+                loading: false,
+                otpVerified: true,
+                verifiedIdentifier: payload.identifier, // Store identifier for guest persistence
+                isNewUser: !payload.exists, // exists is false if new user
+                user: payload.user || null,
+                isAuthenticated: !!payload.user,
+                verifiedAt: Date.now(), // Store time of verification
+            };
+        case SEND_OTP_FAIL:
+        case VERIFY_OTP_FAIL:
+            return {
+                ...state,
+                loading: false,
                 error: payload,
             };
         case LOAD_USER_FAIL:

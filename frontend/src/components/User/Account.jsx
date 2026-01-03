@@ -33,7 +33,7 @@ const Account = () => {
             {loading ? <Loader /> :
                 <>
                     <MinCategory />
-                    <main className="w-full mt-12 sm:mt-0">
+                    <main className="w-full mt-24 sm:mt-0">
 
                         <div className="flex gap-4 sm:w-11/12 sm:mt-4 m-auto mb-7 px-4 sm:px-0">
 

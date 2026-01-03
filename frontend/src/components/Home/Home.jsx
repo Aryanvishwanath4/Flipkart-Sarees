@@ -26,7 +26,7 @@ const Home = () => {
   return (
     <>
       <MetaData title="Aishwarya Silks | Premium Saree Collection" />
-      <main className="flex flex-col w-full mt-20 bg-white">
+      <main className="flex flex-col w-full mt-24 sm:mt-20 bg-white">
         
         {/* Categories Section */}
         <CircularCategorySlider />

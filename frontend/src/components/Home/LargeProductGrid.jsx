@@ -30,7 +30,7 @@ const LargeProductGrid = () => {
   }, [dispatch]);
 
   return (
-    <section className="py-12 bg-[#fffbf7]"> {/* Light cream background for premium feel */}
+    <section className="bg-[#fffbf7]"> {/* Light cream background for premium feel */}
       <h2 className="text-3xl md:text-4xl text-center font-serif text-[#101828] mb-10 tracking-wide">
         Sarees for Women
       </h2>
@@ -38,7 +38,7 @@ const LargeProductGrid = () => {
       {loading ? (
         <div className="text-center">Loading...</div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-0.5 sm:gap-6 px-0 sm:px-6 max-w-[1600px] mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 px-4 sm:px-6 max-w-[1600px] mx-auto">
           {products && products.slice(0, 8).map((product) => {
             const itemInWishlist = wishlistItems.some((i) => i.product === product._id);
             return (

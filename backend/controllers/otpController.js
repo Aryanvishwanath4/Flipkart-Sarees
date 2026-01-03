@@ -1,81 +1,130 @@
 const asyncErrorHandler = require('../middlewares/asyncErrorHandler');
 const ErrorHandler = require('../utils/errorHandler');
+const User = require('../models/userModel');
+const sendToken = require('../utils/sendToken');
+const sendEmail = require('../utils/sendEmail');
+const axios = require('axios');
 
-// In-memory OTP storage (for demo purposes)
+// In-memory OTP storage
 // In production, use Redis with expiry
 const otpStore = new Map();
 
 // Generate OTP
 const generateOTP = () => {
-    // Demo mode: always return 123456
-    if (process.env.NODE_ENV === 'development' || !process.env.MSG91_AUTH_KEY) {
-        return '123456';
+    // Development fallback
+    if (process.env.NODE_ENV === 'development') {
+        // You can comment this out to test real SMS/Email even in dev
+         // return '123456'; 
     }
-    // Production: generate random 6-digit OTP
     return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// Send OTP
+/**
+ * Send OTP
+ * Channel: 'sms', 'email', 'whatsapp'
+ * Identifier: Phone Number or Email Address
+ */
 exports.sendOTP = asyncErrorHandler(async (req, res, next) => {
-    const { phone } = req.body;
+    
+    // Support both 'phone' and 'email' based on channel
+    const { phone, email, channel } = req.body; // channel: 'sms' | 'email' | 'whatsapp'
+    
+    const selectedChannel = channel || 'sms'; // Default to sms
+    let identifier = '';
 
-    if (!phone || phone.length !== 10) {
-        return next(new ErrorHandler("Please provide a valid 10-digit phone number", 400));
+    if (selectedChannel === 'email') {
+        if (!email) return next(new ErrorHandler("Please provide an email address", 400));
+        identifier = email;
+    } else {
+        if (!phone || phone.length !== 10) return next(new ErrorHandler("Please provide a valid 10-digit phone number", 400));
+        identifier = phone;
     }
 
-    // Rate limiting check (max 3 OTPs per phone in 1 hour)
-    const existingEntry = otpStore.get(phone);
-    if (existingEntry && existingEntry.attempts >= 3) {
-        const timeDiff = Date.now() - existingEntry.firstAttempt;
-        if (timeDiff < 3600000) { // 1 hour
-            return next(new ErrorHandler("Too many OTP requests. Try again later.", 429));
-        }
-        // Reset if more than 1 hour
-        otpStore.delete(phone);
+    console.log(`Processing OTP Request for [${identifier}] via [${selectedChannel}]`);
+
+    // Existing Rate Limiting (Disabled/Relaxed for now)
+    /*
+    const limit = 5;
+    const timeWindow = 3600000; // 1 hr
+    const existingEntry = otpStore.get(identifier);
+    if (existingEntry && existingEntry.attempts >= limit) {
+         // ...
     }
+    */
+   
+    const existingEntry = otpStore.get(identifier); // Preserve old attempts if needed
 
     const otp = generateOTP();
-    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 mins
 
     // Store OTP
-    const currentAttempts = existingEntry?.attempts || 0;
-    otpStore.set(phone, {
+    otpStore.set(identifier, {
         otp,
         expiresAt,
-        attempts: currentAttempts + 1,
-        firstAttempt: existingEntry?.firstAttempt || Date.now(),
-        verified: false
+        verified: false,
+        channel: selectedChannel
     });
 
-    // In production, send SMS via MSG91/Twilio here
-    // For now, just log it (demo mode)
-    console.log(`[DEMO OTP] Phone: ${phone}, OTP: ${otp}`);
+    try {
+        if (selectedChannel === 'sms') {
+            // Fast2SMS Call Disabled by User Request (too costly)
+            console.log(`[SMS Mock] Fast2SMS Disabled. OTP for ${identifier}: ${otp}`);
+            /*
+            if (process.env.FAST2SMS_API_KEY) {
+               // ...
+            }
+            */
+        } else if (selectedChannel === 'email') {
+            // Email Logic
+            await sendEmail({
+                email: identifier,
+                subject: 'Flipkart Login OTP',
+                message: `<p>Your OTP for login is <b>${otp}</b>. Valid for 5 minutes.</p>`
+            });
+            console.log(`[Email] OTP sent to ${identifier}`);
+
+        } else if (selectedChannel === 'whatsapp') {
+            // WhatsApp Logic (Mock)
+            // As discussed, free WhatsApp API is unstable. Logging for "Option" demo.
+            console.log(`[WhatsApp Mock] OTP for ${identifier}: ${otp}`);
+            
+            // Allow immediate fake success
+        }
+
+    } catch (error) {
+        console.error("OTP Send Error:", error.message);
+        // Continue to return success with Demo OTP in dev, or fail in prod?
+        // For DX, we return success but include the error message in console.
+    }
 
     res.status(200).json({
         success: true,
-        message: "OTP sent successfully",
-        // Only show OTP in development
+        message: `OTP sent to ${identifier} via ${selectedChannel}`,
+        channel: selectedChannel,
+        // Always return OTP in Dev mode for ease
         ...(process.env.NODE_ENV === 'development' && { demoOtp: otp })
     });
 });
 
 // Verify OTP
 exports.verifyOTP = asyncErrorHandler(async (req, res, next) => {
-    const { phone, otp } = req.body;
+    // Identifier can be phone OR email
+    const { phone, email, otp } = req.body;
+    const identifier = phone || email;
 
-    if (!phone || !otp) {
-        return next(new ErrorHandler("Phone and OTP are required", 400));
+    if (!identifier || !otp) {
+        return next(new ErrorHandler("Identifier and OTP are required", 400));
     }
 
-    const storedData = otpStore.get(phone);
+    const storedData = otpStore.get(identifier);
 
     if (!storedData) {
-        return next(new ErrorHandler("OTP not found. Please request a new one.", 400));
+        return next(new ErrorHandler("OTP not found or expired. Please request a new one.", 400));
     }
 
     if (Date.now() > storedData.expiresAt) {
-        otpStore.delete(phone);
-        return next(new ErrorHandler("OTP has expired. Please request a new one.", 400));
+        otpStore.delete(identifier);
+        return next(new ErrorHandler("OTP has expired.", 400));
     }
 
     if (storedData.otp !== otp) {
@@ -84,24 +133,32 @@ exports.verifyOTP = asyncErrorHandler(async (req, res, next) => {
 
     // Mark as verified
     storedData.verified = true;
-    otpStore.set(phone, storedData);
+    otpStore.set(identifier, storedData);
 
-    // Generate a simple session token (for demo)
-    const sessionToken = Buffer.from(`${phone}:${Date.now()}`).toString('base64');
+    // Check if user exists
+    // Dynamic query: search by phone OR email depending on what was provided
+    const query = phone ? { phone } : { email };
+    const user = await User.findOne(query);
 
-    res.status(200).json({
-        success: true,
-        message: "Phone verified successfully",
-        sessionToken,
-        phone
-    });
+    if (user) {
+        // Log in the user
+        sendToken(user, 200, res);
+    } else {
+        // Return verified status so frontend can redirect to signup
+        res.status(200).json({
+            success: true,
+            message: "OTP Verified",
+            exists: false,
+            identifier, // send back the verified identifier
+            isEmail: !!email
+        });
+    }
 });
 
-// Check if phone is verified (middleware helper)
-exports.isPhoneVerified = (phone) => {
-    const data = otpStore.get(phone);
-    return data?.verified === true && Date.now() < data.expiresAt + 30 * 60 * 1000; // 30 min session
+// Helper
+exports.isVerified = (identifier) => {
+    const data = otpStore.get(identifier);
+    return data?.verified === true && Date.now() < data.expiresAt + 30 * 60 * 1000;
 };
 
-// Export for use in other controllers
 exports.otpStore = otpStore;

@@ -50,7 +50,7 @@ const PrimaryDropDownMenu = ({ setTogglePrimaryDropDown, user }) => {
   return (
     <div
       onMouseLeave={() => setTogglePrimaryDropDown(false)}
-      className="absolute w-60 -left-24 ml-2 top-9 bg-white shadow-2xl rounded flex-col text-sm"
+      className="absolute w-44 -left-24 ml-2 top-9 bg-white shadow-2xl rounded flex-col text-sm z-50"
     >
       {user.role === "admin" && (
         <Link

@@ -35,6 +35,12 @@ import {
   ALL_USERS_FAIL,
   ALL_USERS_SUCCESS,
   ALL_USERS_REQUEST,
+  SEND_OTP_REQUEST,
+  SEND_OTP_SUCCESS,
+  SEND_OTP_FAIL,
+  VERIFY_OTP_REQUEST,
+  VERIFY_OTP_SUCCESS,
+  VERIFY_OTP_FAIL,
 } from "../constants/userConstants";
 import axios from "axios";
 
@@ -309,6 +315,71 @@ export const deleteUser = (id) => async (dispatch) => {
   } catch (error) {
     dispatch({
       type: DELETE_USER_FAIL,
+      payload: error.response?.data?.message || error.message,
+    });
+  }
+
+};
+
+// Send OTP
+export const sendOtp = (phone, email, channel) => async (dispatch) => {
+  try {
+    dispatch({ type: SEND_OTP_REQUEST });
+
+    const config = {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+
+    const { data } = await axios.post("/api/v1/otp/send", { phone, email, channel }, config);
+
+    dispatch({
+      type: SEND_OTP_SUCCESS,
+      payload: data,
+    });
+  } catch (error) {
+    dispatch({
+      type: SEND_OTP_FAIL,
+      payload: error.response?.data?.message || error.message,
+    });
+  }
+};
+
+// Verify OTP
+export const verifyOtp = (phone, email, otp) => async (dispatch) => {
+  try {
+    dispatch({ type: VERIFY_OTP_REQUEST });
+
+    const config = {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+
+    const { data } = await axios.post("/api/v1/otp/verify", { phone, email, otp }, config);
+
+    if (data.user) {
+        // User exists and is now logged in
+        dispatch({
+            type: LOGIN_USER_SUCCESS,
+            payload: data.user,
+        });
+        dispatch({
+            type: VERIFY_OTP_SUCCESS,
+            payload: data,
+        });
+    } else {
+        // User does not exist, verification successful but no login
+        dispatch({
+            type: VERIFY_OTP_SUCCESS,
+            payload: data,
+        });
+    }
+
+  } catch (error) {
+    dispatch({
+      type: VERIFY_OTP_FAIL,
       payload: error.response?.data?.message || error.message,
     });
   }

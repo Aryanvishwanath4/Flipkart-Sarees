@@ -75,10 +75,16 @@ const Header = () => {
           )}
 
           {togglePrimaryDropDown && (
-            <PrimaryDropDownMenu
-              setTogglePrimaryDropDown={setTogglePrimaryDropDown}
-              user={user}
-            />
+            <>
+              <div 
+                className="fixed inset-0 w-full h-full z-40 bg-transparent"
+                onClick={() => setTogglePrimaryDropDown(false)}
+              ></div>
+              <PrimaryDropDownMenu
+                setTogglePrimaryDropDown={setTogglePrimaryDropDown}
+                user={user}
+              />
+            </>
           )}
 
 

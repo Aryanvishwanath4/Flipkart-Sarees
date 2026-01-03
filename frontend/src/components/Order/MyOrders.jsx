@@ -176,7 +176,7 @@ const MyOrders = () => {
             <MetaData title="My Orders | Aishwarya Silks" />
 
             <MinCategory />
-            <main className="w-full mt-16 sm:mt-0">
+            <main className="w-full mt-24 sm:mt-0">
 
                 <div className="flex gap-4 sm:w-11/12 sm:mt-4 m-auto mb-7 px-0 sm:px-0">
 

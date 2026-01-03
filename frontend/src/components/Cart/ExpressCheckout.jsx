@@ -10,8 +10,12 @@ import PaymentIcon from '@mui/icons-material/Payment';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import CircularProgress from '@mui/material/CircularProgress';
+import Radio from '@mui/material/Radio';
+import RadioGroup from '@mui/material/RadioGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import { emptyCart } from '../../actions/cartAction';
 import { loadUser } from '../../actions/userAction';
+import { VERIFY_OTP_SUCCESS } from '../../constants/userConstants';
 
 const ExpressCheckout = ({ open, onClose, cartItems, totalPrice }) => {
     const dispatch = useDispatch();
@@ -19,7 +23,7 @@ const ExpressCheckout = ({ open, onClose, cartItems, totalPrice }) => {
     const { enqueueSnackbar } = useSnackbar();
     
     // Check if user is logged in
-    const { user, isAuthenticated } = useSelector((state) => state.user);
+    const { user, isAuthenticated, otpVerified, verifiedIdentifier, verifiedAt } = useSelector((state) => state.user);
 
     // Step management - Skip phone step if logged in
     const [step, setStep] = useState(1);
@@ -27,6 +31,8 @@ const ExpressCheckout = ({ open, onClose, cartItems, totalPrice }) => {
 
     // Step 1: Phone & OTP (skipped if logged in)
     const [phone, setPhone] = useState('');
+    const [email, setEmail] = useState('');
+    const [otpChannel, setOtpChannel] = useState('whatsapp'); // 'whatsapp' | 'email'
     const [otp, setOtp] = useState('');
     const [otpSent, setOtpSent] = useState(false);
     const [phoneVerified, setPhoneVerified] = useState(false);
@@ -39,6 +45,8 @@ const ExpressCheckout = ({ open, onClose, cartItems, totalPrice }) => {
         city: '',
         state: '',
         pincode: '',
+        phone: '',
+        email: '', // Added email field
     });
     const [savedAddresses, setSavedAddresses] = useState([]);
     const [selectedAddressId, setSelectedAddressId] = useState(null);
@@ -72,6 +80,7 @@ const ExpressCheckout = ({ open, onClose, cartItems, totalPrice }) => {
                 // User is logged in - skip phone step
                 setPhoneVerified(true);
                 setPhone(user.phone || '');
+                setEmail(user.email || '');
                 setStep(2);
                 
                 // Pre-fill address from user's saved addresses
@@ -85,33 +94,89 @@ const ExpressCheckout = ({ open, onClose, cartItems, totalPrice }) => {
                             city: defaultAddr.city || '',
                             state: defaultAddr.state || '',
                             pincode: defaultAddr.pincode || '',
+                            phone: user.phone || '', // Pre-fill phone
+                            email: user.email || '', // Pre-fill email
                         });
                         setSelectedAddressId(defaultAddr._id);
                     }
                 } else {
                     // Pre-fill name from user
-                    setAddress(prev => ({ ...prev, name: user.name }));
+                    setAddress(prev => ({ ...prev, name: user.name, phone: user.phone || '', email: user.email || '' }));
+                }
+            } else if (otpVerified && verifiedIdentifier && verifiedAt) {
+                // Check if verification is still valid (30 mins)
+                const isExpired = Date.now() - verifiedAt > 30 * 60 * 1000;
+                
+                if (!isExpired) {
+                    // Determine if identifier is phone or email
+                    const isEmail = verifiedIdentifier.includes('@');
+                    let verifiedPhone = '';
+                    
+                    if (isEmail) {
+                        setEmail(verifiedIdentifier);
+                        setOtpChannel('email');
+                    } else {
+                        setPhone(verifiedIdentifier);
+                        verifiedPhone = verifiedIdentifier;
+                        setOtpChannel('whatsapp');
+                    }
+                    
+                    setPhoneVerified(true);
+                    setStep(2);
+                    
+                    // Pre-fill phone/email in address if we have it
+                    setAddress(prev => ({ 
+                        ...prev, 
+                        phone: verifiedPhone || prev.phone,
+                        email: isEmail ? verifiedIdentifier : prev.email
+                    }));
+                    
+                    enqueueSnackbar(`Welcome back! Your ${isEmail ? 'email' : 'phone'} is already verified.`, { variant: "info" });
+                } else {
+                     // Expired - Reset to step 1
+                     setStep(1);
+                     setPhoneVerified(false);
+                     setOtpSent(false); // Reset local state
+                     setPhone('');
+                     setEmail('');
+                     setOtp('');
                 }
             } else {
                 // Guest - start from phone step
                 setStep(1);
                 setPhoneVerified(false);
+                setOtpSent(false); // Reset local state
+                setPhone('');
+                setEmail('');
+                setOtp('');
             }
         }
-    }, [open, isAuthenticated, user]);
+    }, [open, isAuthenticated, user, otpVerified, verifiedIdentifier, verifiedAt, enqueueSnackbar]);
 
     // Send OTP
     const handleSendOTP = async () => {
-        if (phone.length !== 10) {
+        if (otpChannel === 'whatsapp' && phone.length !== 10) {
             enqueueSnackbar('Please enter a valid 10-digit phone number', { variant: 'warning' });
             return;
         }
+        if (otpChannel === 'email' && !/\S+@\S+\.\S+/.test(email)) {
+            enqueueSnackbar('Please enter a valid email address', { variant: 'warning' });
+            return;
+        }
+
         setLoading(true);
         try {
-            const { data } = await axios.post('/api/v1/otp/send', { phone });
+            const payload = {
+                channel: otpChannel,
+                ...(otpChannel === 'email' ? { email } : { phone })
+            };
+            
+            const { data } = await axios.post('/api/v1/otp/send', payload);
+            
             if (data.success) {
                 setOtpSent(true);
-                enqueueSnackbar('OTP sent successfully! (Demo: 123456)', { variant: 'success' });
+                setOtp(''); // Clear previous OTP on resend
+                enqueueSnackbar(`OTP sent successfully to ${otpChannel === 'email' ? email : phone}!`, { variant: 'success' });
             }
         } catch (error) {
             enqueueSnackbar(error.response?.data?.message || 'Failed to send OTP', { variant: 'error' });
@@ -127,11 +192,31 @@ const ExpressCheckout = ({ open, onClose, cartItems, totalPrice }) => {
         }
         setLoading(true);
         try {
-            const { data } = await axios.post('/api/v1/otp/verify', { phone, otp });
+            const payload = {
+                otp,
+                ...(otpChannel === 'email' ? { email } : { phone })
+            };
+
+            const { data } = await axios.post('/api/v1/otp/verify', payload);
+            
             if (data.success) {
                 setPhoneVerified(true);
                 setSessionToken(data.sessionToken);
-                enqueueSnackbar('Phone verified successfully!', { variant: 'success' });
+                
+                // Sync with Redux for persistence
+                dispatch({
+                    type: VERIFY_OTP_SUCCESS,
+                    payload: data
+                });
+
+                // If verified via phone, pre-fill address phone
+                if (otpChannel === 'whatsapp' && phone) {
+                    setAddress(prev => ({ ...prev, phone: phone }));
+                } else if (otpChannel === 'email' && email) {
+                    setAddress(prev => ({ ...prev, email: email }));
+                }
+
+                enqueueSnackbar('Verified successfully!', { variant: 'success' });
                 setStep(2);
             }
         } catch (error) {
@@ -142,12 +227,16 @@ const ExpressCheckout = ({ open, onClose, cartItems, totalPrice }) => {
 
     // Validate address
     const validateAddress = () => {
-        if (!address.name || !address.address || !address.city || !address.state || !address.pincode) {
-            enqueueSnackbar('Please fill all address fields', { variant: 'warning' });
+        if (!address.name || !address.address || !address.city || !address.state || !address.pincode || !address.phone || (!isAuthenticated && !address.email)) {
+            enqueueSnackbar('Please fill all address fields including Email and Phone', { variant: 'warning' });
             return false;
         }
         if (address.pincode.length !== 6) {
             enqueueSnackbar('Please enter a valid 6-digit pincode', { variant: 'warning' });
+            return false;
+        }
+        if (address.phone.length !== 10) {
+            enqueueSnackbar('Please enter a valid 10-digit phone number', { variant: 'warning' });
             return false;
         }
         return true;
@@ -187,15 +276,15 @@ const ExpressCheckout = ({ open, onClose, cartItems, totalPrice }) => {
                     state: address.state,
                     country: 'India',
                     pincode: parseInt(address.pincode),
-                    phoneNo: parseInt(phone) || parseInt(user?.phone) || 0,
+                    phoneNo: parseInt(address.phone) || 0, // Use address phone
                 },
                 orderItems,
                 paymentInfo,
                 totalPrice: paymentMethod === 'cod' ? totalPrice + 100 : totalPrice,
                 guestInfo: {
                     name: address.name,
-                    phone: phone || user?.phone || '',
-                    email: user?.email || '',
+                    phone: address.phone, // Use address phone
+                    email: address.email || accountForm.email || (otpChannel === 'email' ? email : (user?.email || '')),
                 },
             });
 
@@ -232,7 +321,7 @@ const ExpressCheckout = ({ open, onClose, cartItems, totalPrice }) => {
             const { data } = await axios.post('/api/v1/create-from-guest', {
                 name: address.name,
                 email: accountForm.email,
-                phone: phone,
+                phone: address.phone, // Use address phone
                 password: accountForm.password,
                 address: {
                     name: address.name,
@@ -240,7 +329,7 @@ const ExpressCheckout = ({ open, onClose, cartItems, totalPrice }) => {
                     city: address.city,
                     state: address.state,
                     pincode: address.pincode,
-                    phone: phone,
+                    phone: address.phone, // Use address phone
                 }
             });
 
@@ -312,26 +401,56 @@ const ExpressCheckout = ({ open, onClose, cartItems, totalPrice }) => {
 
                 {/* Content */}
                 <div className="p-4">
-                    {/* Step 1: Phone Verification */}
+                    {/* Step 1: Verification */}
                     {step === 1 && !orderPlaced && (
                         <div className="space-y-4">
-                            <h3 className="font-medium text-lg">Enter Mobile Number</h3>
-                            <div className="flex border rounded overflow-hidden">
-                                <span className="bg-gray-100 px-3 py-3 flex items-center text-gray-600">+91</span>
+                            <h3 className="font-medium text-lg">Login / Verify</h3>
+                            
+                            {!otpSent && (
+                                <div className="flex flex-col gap-2">
+                                    <span className="text-xs text-gray-500 font-medium">Send OTP via:</span>
+                                    <RadioGroup
+                                        row
+                                        name="otp-channel"
+                                        value={otpChannel}
+                                        onChange={(e) => setOtpChannel(e.target.value)}
+                                        className="mb-2"
+                                    >
+                                        <FormControlLabel value="whatsapp" control={<Radio size="small" />} label={<span className="text-sm">WhatsApp</span>} />
+                                        <FormControlLabel value="email" control={<Radio size="small" />} label={<span className="text-sm">Email</span>} />
+                                    </RadioGroup>
+                                </div>
+                            )}
+
+                            {otpChannel === 'whatsapp' ? (
+                                <div className="flex border rounded overflow-hidden">
+                                    <span className="bg-gray-100 px-3 py-3 flex items-center text-gray-600">+91</span>
+                                    <input
+                                        type="tel"
+                                        maxLength="10"
+                                        placeholder="Enter 10-digit number"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                                        className="flex-1 px-3 py-3 outline-none"
+                                        disabled={otpSent}
+                                    />
+                                </div>
+                            ) : (
                                 <input
-                                    type="tel"
-                                    maxLength="10"
-                                    placeholder="Enter 10-digit number"
-                                    value={phone}
-                                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                                    className="flex-1 px-3 py-3 outline-none"
+                                    type="email"
+                                    placeholder="Enter Email Address"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="w-full border rounded px-3 py-3 outline-none"
                                     disabled={otpSent}
                                 />
-                            </div>
+                            )}
 
                             {otpSent && (
                                 <div className="space-y-2">
-                                    <p className="text-sm text-gray-600">Enter OTP sent to +91 {phone}</p>
+                                    <p className="text-sm text-gray-600">
+                                        Enter OTP sent to {otpChannel === 'whatsapp' ? `+91 ${phone}` : email}
+                                    </p>
                                     <input
                                         type="text"
                                         maxLength="6"
@@ -350,15 +469,24 @@ const ExpressCheckout = ({ open, onClose, cartItems, totalPrice }) => {
                                 className="w-full bg-primary-orange text-white py-3 rounded font-medium flex items-center justify-center gap-2 hover:bg-orange-600 transition-colors disabled:opacity-50"
                             >
                                 {loading && <CircularProgress size={20} color="inherit" />}
-                                {otpSent ? 'Verify OTP' : 'Send OTP'}
+                                {otpSent ? 'Verify OTP' : `Send ${otpChannel === 'email' ? 'Email' : 'WhatsApp'} OTP`}
                             </button>
+                            
+                            {otpSent && (
+                                <button
+                                    onClick={handleSendOTP}
+                                    className="w-full text-primary-blue text-sm text-center mt-2 hover:underline"
+                                >
+                                    Resend OTP
+                                </button>
+                            )}
 
                             {otpSent && (
                                 <button
                                     onClick={() => { setOtpSent(false); setOtp(''); }}
                                     className="w-full text-primary-blue text-sm"
                                 >
-                                    Change Number
+                                    Change {otpChannel === 'email' ? 'Email' : 'Number'}
                                 </button>
                             )}
                         </div>
@@ -375,6 +503,27 @@ const ExpressCheckout = ({ open, onClose, cartItems, totalPrice }) => {
                                 onChange={(e) => setAddress({ ...address, name: e.target.value })}
                                 className="w-full border rounded px-3 py-3 outline-none focus:border-primary-blue"
                             />
+                            <input
+                                type="email"
+                                placeholder="Email Address (for order confirmation) *"
+                                value={address.email}
+                                onChange={(e) => setAddress({ ...address, email: e.target.value })}
+                                className="w-full border rounded px-3 py-3 outline-none focus:border-primary-blue"
+                            />
+
+                            {/* NEW PHONE FIELD */}
+                            <div className="flex border rounded overflow-hidden">
+                                <span className="bg-gray-100 px-3 py-3 flex items-center text-gray-600">+91</span>
+                                <input
+                                    type="tel"
+                                    maxLength="10"
+                                    placeholder="Phone Number *"
+                                    value={address.phone}
+                                    onChange={(e) => setAddress({ ...address, phone: e.target.value.replace(/\D/g, '') })}
+                                    className="flex-1 px-3 py-3 outline-none"
+                                />
+                            </div>
+
                             <textarea
                                 placeholder="Address (House No, Street, Area) *"
                                 value={address.address}
