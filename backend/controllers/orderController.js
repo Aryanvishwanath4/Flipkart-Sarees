@@ -86,16 +86,16 @@ exports.newOrder = asyncErrorHandler(async (req, res, next) => {
     `;
 
     console.log(`Attempting to send order confirmation email to: ${req.user.email}`);
-    try {
-        await sendEmail({
-            email: req.user.email,
-            subject: `Order Confirmed - Aishwarya Silks (#${order._id.toString().slice(-6).toUpperCase()})`,
-            message: emailMessage
-        });
+    // Non-blocking email sending
+    sendEmail({
+        email: req.user.email,
+        subject: `Order Confirmed - Aishwarya Silks (#${order._id.toString().slice(-6).toUpperCase()})`,
+        message: emailMessage
+    }).then(() => {
         console.log("Order confirmation email sent successfully");
-    } catch (error) {
+    }).catch((error) => {
         console.error("Order Email Error:", error.message);
-    }
+    });
 
     res.status(201).json({
         success: true,
