@@ -28,6 +28,7 @@ const ExpressCheckout = ({ open, onClose, cartItems, totalPrice }) => {
     // Step management - Skip phone step if logged in
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(true);
 
     // Step 1: Phone & OTP (skipped if logged in)
     const [phone, setPhone] = useState('');
@@ -75,7 +76,14 @@ const ExpressCheckout = ({ open, onClose, cartItems, totalPrice }) => {
 
     // Initialize based on logged-in status
     useEffect(() => {
+        let timer;
         if (open) {
+            // Set a small loading state to prevent flickering of "0 items"
+            setInitialLoading(true);
+            timer = setTimeout(() => {
+                setInitialLoading(false);
+            }, 400);
+
             if (isAuthenticated && user) {
                 // User is logged in - skip phone step
                 setPhoneVerified(true);
@@ -151,6 +159,7 @@ const ExpressCheckout = ({ open, onClose, cartItems, totalPrice }) => {
                 setOtp('');
             }
         }
+        return () => clearTimeout(timer);
     }, [open, isAuthenticated, user, otpVerified, verifiedIdentifier, verifiedAt, enqueueSnackbar]);
 
     // Send OTP
@@ -391,18 +400,33 @@ const ExpressCheckout = ({ open, onClose, cartItems, totalPrice }) => {
                 </div>
 
                 {/* Order Summary */}
-                <div className="px-4 py-2 border-b flex items-center justify-between">
+                <div className="px-4 py-2 border-b flex items-center justify-between bg-gray-50">
                     <div className="flex items-center gap-2">
                         <span className="text-gray-600">🛒 Order Summary</span>
-                        <span className="text-xs text-gray-400">({cartItems.length} items)</span>
+                        {initialLoading ? (
+                            <div className="h-4 w-12 bg-gray-200 animate-pulse rounded" />
+                        ) : (
+                            <span className="text-xs text-gray-400">({cartItems.length} items)</span>
+                        )}
                     </div>
-                    <span className="font-bold text-lg">₹{totalPrice.toLocaleString()}</span>
+                    {initialLoading ? (
+                        <div className="h-6 w-20 bg-gray-200 animate-pulse rounded" />
+                    ) : (
+                        <span className="font-bold text-lg text-primary-blue">₹{totalPrice.toLocaleString()}</span>
+                    )}
                 </div>
 
                 {/* Content */}
-                <div className="p-4">
-                    {/* Step 1: Verification */}
-                    {step === 1 && !orderPlaced && (
+                <div className="p-4 relative min-h-[300px]">
+                    {initialLoading ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
+                            <CircularProgress size={40} />
+                            <p className="mt-4 text-gray-500 text-sm animate-pulse">Preparing your order...</p>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Step 1: Verification */}
+                            {step === 1 && !orderPlaced && (
                         <div className="space-y-4">
                             <h3 className="font-medium text-lg">Login / Verify</h3>
                             
@@ -723,6 +747,8 @@ const ExpressCheckout = ({ open, onClose, cartItems, totalPrice }) => {
                             </button>
                         </div>
                     )}
+                    </>
+                )}
                 </div>
 
                 {/* Footer */}
