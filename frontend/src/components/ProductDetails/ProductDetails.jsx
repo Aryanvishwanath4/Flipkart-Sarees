@@ -34,19 +34,24 @@ import {
 } from "../../actions/wishlistAction";
 import MinCategory from "../Layouts/MinCategory";
 import MetaData from "../Layouts/MetaData";
+import ExpressCheckout from "../Cart/ExpressCheckout";
 
 
 const ProductDetails = () => {
-  const dispatch = useDispatch();
-  const { enqueueSnackbar } = useSnackbar();
-  const params = useParams();
-  const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const { enqueueSnackbar } = useSnackbar();
+    const params = useParams();
+    const navigate = useNavigate();
 
-  const [open, setOpen] = useState(false);
-  const [viewAll, setViewAll] = useState(false);
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState("");
-  const [selectedImage, setSelectedImage] = useState(0);
+    const [open, setOpen] = useState(false);
+    const [viewAll, setViewAll] = useState(false);
+    const [rating, setRating] = useState(0);
+    const [comment, setComment] = useState("");
+    const [selectedImage, setSelectedImage] = useState(0);
+    
+    // Express Checkout for "Buy Now"
+    const [showCheckout, setShowCheckout] = useState(false);
+    const [buyNowItem, setBuyNowItem] = useState(null);
 
   const { product, loading, error } = useSelector(
     (state) => state.productDetails
@@ -72,8 +77,22 @@ const ProductDetails = () => {
 
   const buyNow = () => {
     if (!product || product.stock < 1) return;
+    
+    // Direct "Express Checkout" for Buy Now
+    const item = {
+        product: product._id,
+        name: product.name,
+        price: product.price,
+        image: product.images[0].url,
+        stock: product.stock,
+        quantity: 1,
+    };
+    
+    setBuyNowItem(item);
+    setShowCheckout(true);
+    
+    // Also add to cart in background for consistency
     dispatch(addItemsToCart(productId));
-    navigate("/cart");
   };
 
   const addToWishlistHandler = () => {
@@ -529,6 +548,14 @@ const ProductDetails = () => {
           </div>
         </div>
       </main>
+      
+      {/* Direct Express Checkout Modal */}
+      <ExpressCheckout 
+        open={showCheckout} 
+        onClose={() => setShowCheckout(false)}
+        cartItems={buyNowItem ? [buyNowItem] : []}
+        totalPrice={buyNowItem ? buyNowItem.price : 0}
+      />
     </>
   );
 };

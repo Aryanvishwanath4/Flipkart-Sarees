@@ -1,9 +1,20 @@
 const path = require('path');
 const express = require('express');
+
+// Set up config path for development
+if (process.env.NODE_ENV !== 'production') {
+    require('dotenv').config({ path: 'backend/config/config.env' });
+    console.log("Environment variables loaded successfully.");
+}
+
 const cloudinary = require('cloudinary');
-const app = require('./backend/app');
 const connectDatabase = require('./backend/config/database');
+const { initializeWhatsApp } = require('./backend/utils/whatsappClient');
+const app = require('./backend/app');
 const PORT = process.env.PORT || 4000;
+
+// WhatsApp Initialization
+initializeWhatsApp();
 
 // UncaughtException Error
 process.on('uncaughtException', (err) => {
