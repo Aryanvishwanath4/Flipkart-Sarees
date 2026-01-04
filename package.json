@@ -26,8 +26,10 @@
     "mongoose": "^6.1.7",
     "nodemailer": "^6.7.2",
     "paytmchecksum": "^1.5.0",
+    "qrcode-terminal": "^0.12.0",
     "stripe": "^8.200.0",
     "uuid": "^8.3.2",
-    "validator": "^13.7.0"
+    "validator": "^13.7.0",
+    "whatsapp-web.js": "^1.34.2"
   }
 }

@@ -87,11 +87,22 @@ exports.sendOTP = asyncErrorHandler(async (req, res, next) => {
             });
 
         } else if (selectedChannel === 'whatsapp') {
-            // WhatsApp Logic (Mock)
-            // As discussed, free WhatsApp API is unstable. Logging for "Option" demo.
-            console.log(`[WhatsApp Mock] OTP for ${identifier}: ${otp}`);
-            
-            // Allow immediate fake success
+            const { getWhatsAppClient } = require('../utils/whatsappClient');
+            const client = getWhatsAppClient();
+
+            if (client) {
+                // Formatting for India numbers (91)
+                const chatId = `91${identifier}@c.us`; 
+                client.sendMessage(chatId, `Your OTP for FlipKart/Aishwarya Silks is *${otp}*. Valid for 5 minutes.`)
+                .then(() => {
+                    console.log(`[WhatsApp] OTP sent to ${identifier}`);
+                })
+                .catch((err) => {
+                    console.error(`[WhatsApp Error] Failed to send to ${identifier}:`, err.message);
+                });
+            } else {
+                console.log(`[WhatsApp Mock] Client not ready. OTP for ${identifier}: ${otp}`);
+            }
         }
 
     } catch (error) {

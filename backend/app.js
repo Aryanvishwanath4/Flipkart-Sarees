@@ -7,10 +7,7 @@ const cloudinary = require("cloudinary");
 
 const app = express();
 
-// config
-if (process.env.NODE_ENV !== "production") {
-  require("dotenv").config({ path: "backend/config/config.env" });
-}
+// config is handled in server.js for better startup order
 
 // Cloudinary Config
 cloudinary.config({
