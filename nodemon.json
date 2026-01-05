@@ -1,9 +1,14 @@
 {
+  "watch": ["backend/", "server.js"],
   "ignore": [
-    ".wwebjs_auth/*",
-    ".wwebjs_cache/*",
-    "frontend/*",
-    "node_modules/*"
+    "frontend/",
+    "node_modules/",
+    ".wwebjs_auth/",
+    ".wwebjs_cache/",
+    "whatsapp_debug.js",
+    "*.log",
+    "*.md",
+    "*.json"
   ],
-  "ext": "js,mjs,cjs,json"
+  "ext": "js"
 }

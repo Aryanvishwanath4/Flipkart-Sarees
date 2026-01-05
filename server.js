@@ -19,7 +19,9 @@ process.on('uncaughtException', (err) => {
     process.exit(1);
 });
 
+console.log("Starting Database Connection...");
 connectDatabase().then(() => {
+    console.log("Database Connection Success. Initializing WhatsApp...");
     initializeWhatsApp();
 });
 
