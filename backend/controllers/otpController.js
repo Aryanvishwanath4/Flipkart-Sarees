@@ -87,10 +87,10 @@ exports.sendOTP = asyncErrorHandler(async (req, res, next) => {
             });
 
         } else if (selectedChannel === 'whatsapp') {
-            const { getWhatsAppClient } = require('../utils/whatsappClient');
+            const { getWhatsAppClient, isClientReady } = require('../utils/whatsappClient');
             const client = getWhatsAppClient();
 
-            if (client) {
+            if (client && isClientReady()) {
                 // Formatting for India numbers (91)
                 const chatId = `91${identifier}@c.us`; 
                 client.sendMessage(chatId, `Your OTP for FlipKart/Aishwarya Silks is *${otp}*. Valid for 5 minutes.`)
@@ -101,7 +101,8 @@ exports.sendOTP = asyncErrorHandler(async (req, res, next) => {
                     console.error(`[WhatsApp Error] Failed to send to ${identifier}:`, err.message);
                 });
             } else {
-                console.log(`[WhatsApp Mock] Client not ready. OTP for ${identifier}: ${otp}`);
+                const status = !client ? "Not Initialized" : "Waiting for READY";
+                console.log(`[WhatsApp Status: ${status}] OTP for ${identifier}: ${otp} (Sending Mock success for demo)`);
             }
         }
 
