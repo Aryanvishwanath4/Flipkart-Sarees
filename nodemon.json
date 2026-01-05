@@ -1,0 +1,9 @@
+{
+  "ignore": [
+    ".wwebjs_auth/*",
+    ".wwebjs_cache/*",
+    "frontend/*",
+    "node_modules/*"
+  ],
+  "ext": "js,mjs,cjs,json"
+}

@@ -2,6 +2,7 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 
 let client;
+let isReady = false;
 
 const initializeWhatsApp = () => {
     console.log('Initializing WhatsApp Client...');
@@ -10,6 +11,10 @@ const initializeWhatsApp = () => {
         authStrategy: new LocalAuth({
             clientId: "flipkart-sarees"
         }),
+        webVersionCache: {
+            type: 'remote',
+            remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
+        },
         puppeteer: {
             headless: true, // or "new" for newer puppeteer versions
             args: [
@@ -26,11 +31,12 @@ const initializeWhatsApp = () => {
     });
 
     client.on('ready', () => {
+        isReady = true;
         console.log('--- WhatsApp Client is READY to send messages! ---');
     });
 
     client.on('authenticated', () => {
-        console.log('--- WhatsApp Authenticated successfully! ---');
+        console.log('--- WhatsApp Authenticated successfully! Wait for READY... ---');
     });
 
     client.on('auth_failure', (msg) => {
@@ -45,5 +51,6 @@ const initializeWhatsApp = () => {
 };
 
 const getWhatsAppClient = () => client;
+const isClientReady = () => isReady;
 
-module.exports = { initializeWhatsApp, getWhatsAppClient };
+module.exports = { initializeWhatsApp, getWhatsAppClient, isClientReady };
