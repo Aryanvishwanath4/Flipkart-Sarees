@@ -13,16 +13,15 @@ const { initializeWhatsApp } = require('./backend/utils/whatsappClient');
 const app = require('./backend/app');
 const PORT = process.env.PORT || 4000;
 
-// WhatsApp Initialization
-initializeWhatsApp();
-
 // UncaughtException Error
 process.on('uncaughtException', (err) => {
     console.log(`Error: ${err.message}`);
     process.exit(1);
 });
 
-connectDatabase();
+connectDatabase().then(() => {
+    initializeWhatsApp();
+});
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_NAME,

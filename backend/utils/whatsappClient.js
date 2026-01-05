@@ -1,22 +1,29 @@
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, RemoteAuth } = require('whatsapp-web.js');
+const { MongoStore } = require('wwebjs-mongo');
 const qrcode = require('qrcode-terminal');
+const mongoose = require('mongoose');
 
 let client;
 let isReady = false;
 
 const initializeWhatsApp = () => {
-    console.log('Initializing WhatsApp Client...');
+    console.log('Initializing WhatsApp Client (RemoteAuth)...');
     
+    // Create MongoStore using the existing mongoose connection
+    const store = new MongoStore({ mongoose: mongoose });
+
     client = new Client({
-        authStrategy: new LocalAuth({
-            clientId: "flipkart-sarees"
+        authStrategy: new RemoteAuth({
+            clientId: "flipkart-sarees",
+            store: store,
+            backupSyncIntervalMs: 600000 // Backup every 10 minutes
         }),
         webVersionCache: {
             type: 'remote',
             remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
         },
         puppeteer: {
-            headless: true, // or "new" for newer puppeteer versions
+            headless: true,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox'
