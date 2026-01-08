@@ -16,19 +16,15 @@ const initializeWhatsApp = () => {
         authStrategy: new RemoteAuth({
             clientId: "flipkart-sarees",
             store: store,
-            backupSyncIntervalMs: 600000 // Backup every 10 minutes
+            backupSyncIntervalMs: 600000 
         }),
+        authTimeoutMs: 60000, 
+        qrMaxRetries: 5,
         puppeteer: {
-            headless: true,
+            headless: process.env.NODE_ENV === 'production' ? true : false,
             args: [
                 '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-extensions',
-                '--disable-dev-shm-usage',
-                '--disable-gpu',
-                '--no-first-run',
-                '--no-zygote',
-                '--single-process'
+                '--disable-setuid-sandbox'
             ],
         }
     });
