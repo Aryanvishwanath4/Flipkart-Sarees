@@ -24,7 +24,12 @@ const initializeWhatsApp = () => {
             headless: process.env.NODE_ENV === 'production' ? true : false,
             args: [
                 '--no-sandbox',
-                '--disable-setuid-sandbox'
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas',
+                '--no-first-run',
+                '--no-zygote',
+                '--disable-gpu'
             ],
         }
     });
@@ -50,6 +55,10 @@ const initializeWhatsApp = () => {
     client.on('ready', () => {
         isReady = true;
         console.log('--- WhatsApp Client is READY to send messages! ---');
+    });
+
+    client.on('loading_screen', (percent, message) => {
+        console.log(`--- WhatsApp Loading: ${percent}% - ${message} ---`);
     });
 
     client.on('authenticated', () => {
