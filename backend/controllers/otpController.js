@@ -93,7 +93,7 @@ exports.sendOTP = asyncErrorHandler(async (req, res, next) => {
             if (client && isClientReady()) {
                 // Formatting for India numbers (91)
                 const chatId = `91${identifier}@c.us`; 
-                client.sendMessage(chatId, `Your OTP for FlipKart/Aishwarya Silks is *${otp}*. Valid for 5 minutes.`)
+                client.sendMessage(chatId, `Your OTP for Aishwarya Silks is *${otp}*. Valid for 5 minutes.`)
                 .then(() => {
                     console.log(`[WhatsApp] OTP sent to ${identifier}`);
                 })

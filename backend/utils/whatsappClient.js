@@ -16,14 +16,12 @@ const initializeWhatsApp = () => {
         authStrategy: new RemoteAuth({
             clientId: "flipkart-sarees",
             store: store,
-            backupSyncIntervalMs: 600000 // Backup every 10 minutes
+            backupSyncIntervalMs: 600000 
         }),
-        webVersionCache: {
-            type: 'remote',
-            remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
-        },
+        authTimeoutMs: 60000, 
+        qrMaxRetries: 5,
         puppeteer: {
-            headless: true,
+            headless: process.env.NODE_ENV === 'production' ? true : false,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox'
@@ -31,10 +29,22 @@ const initializeWhatsApp = () => {
         }
     });
 
+    console.log('Registering WhatsApp Event Handlers...');
+
+    // Diagnostic: Track session persistence
+    client.on('remote_session_saved', () => {
+        console.log('--- SUCCESS: WhatsApp Remote Session SAVED to Database ---');
+    });
+
+    client.on('remote_session_restored', () => {
+        console.log('--- SUCCESS: WhatsApp Remote Session RESTORED from Database ---');
+    });
+
     client.on('qr', (qr) => {
-        console.log('\n\n--- ACTION REQUIRED: SCAN THIS QR CODE FOR WHATSAPP ---');
+        console.log('\n--- NEW QR CODE GENERATED (Rotate/Update) ---');
         qrcode.generate(qr, { small: true });
-        console.log('Note: Use your WhatsApp Linked Devices to scan this.\n-------------------------------------------------------\n\n');
+        console.log('Note: Use your WhatsApp Linked Devices to scan this.');
+        console.log('If already scanned, wait for the READY message.\n-------------------------------------------------------\n\n');
     });
 
     client.on('ready', () => {
@@ -43,7 +53,7 @@ const initializeWhatsApp = () => {
     });
 
     client.on('authenticated', () => {
-        console.log('--- WhatsApp Authenticated successfully! Wait for READY... ---');
+        console.log('--- WhatsApp Authenticated successfully! Initializing store... ---');
     });
 
     client.on('auth_failure', (msg) => {
